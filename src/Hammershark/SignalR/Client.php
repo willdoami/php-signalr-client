@@ -45,7 +45,7 @@ class Client
 
     private function connect()
     {
-        $this->loop = \React\EventLoop\Factory::create();
+        $this->loop = \React\EventLoop\Loop::get();
         $connector = new \Ratchet\Client\Connector($this->loop);
         $connector($this->buildConnectUrl())->then(function(\Ratchet\Client\WebSocket $conn) {
             $this->subscribe($conn);
