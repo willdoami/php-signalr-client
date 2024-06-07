@@ -31,10 +31,6 @@ class Client
 
         $this->connect();
 
-        if(!$this->start()) {
-            throw new \RuntimeException("Cannot start");
-        }
-
         $this->loop->run();
     }
 
@@ -68,6 +64,12 @@ class Client
         }, function(\Exception $e) {
             echo "Could not connect: {$e->getMessage()}\n";
             $this->loop->stop();
+        })->then(function() {
+            if (!$this->start()) {
+                throw new \RuntimeException("Cannot start");
+            };
+        }, function(\Exception $e) {
+            throw $e;
         });
     }
 
