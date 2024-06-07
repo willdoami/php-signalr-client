@@ -12,8 +12,9 @@ class Client
     private $connectionId;
     private $loop;
     private $callbacks;
-    private $channels;
+    private $channels = [];
     private $messageId = 1000;
+    private $headers = [];
 
     public function __construct($base_url, $hubs)
     {
@@ -63,7 +64,7 @@ class Client
                     }
                 }
             });
-                
+
         }, function(\Exception $e) {
             echo "Could not connect: {$e->getMessage()}\n";
             $this->loop->stop();
@@ -73,7 +74,7 @@ class Client
     private function buildNegotiateUrl()
     {
         $base = str_replace("wss://", "https://", $this->base_url);
-        
+
         $hubs = [];
         foreach($this->hubs as $hubName) {
             $hubs[] = (object)["name" => $hubName];
@@ -84,13 +85,13 @@ class Client
             "connectionData" => json_encode($hubs)
         ];
 
-        return $base . "/negotiate?" . http_build_query($query); 
+        return $base . "/negotiate?" . http_build_query($query);
     }
 
     private function buildStartUrl()
     {
         $base = str_replace("wss://", "https://", $this->base_url);
-        
+
         $hubs = [];
         foreach($this->hubs as $hubName) {
             $hubs[] = (object)["name" => $hubName];
@@ -103,7 +104,7 @@ class Client
             "connectionData" => json_encode($hubs)
         ];
 
-        return $base . "/start?" . http_build_query($query); 
+        return $base . "/start?" . http_build_query($query);
     }
 
     private function buildConnectUrl()
@@ -120,7 +121,7 @@ class Client
             "connectionData" => json_encode($hubs)
         ];
 
-        return $this->base_url . "/connect?" . http_build_query($query); 
+        return $this->base_url . "/connect?" . http_build_query($query);
     }
 
     private function negotiate()
@@ -128,10 +129,11 @@ class Client
         try {
             $url = $this->buildNegotiateUrl();
             $client = new \GuzzleHttp\Client();
-            $res = $client->request('GET', $url);
+            $options = $this->headers ? ['headers' => $this->headers] : [];
+            $res = $client->request('GET', $url, $options);
 
             $body = json_decode($res->getBody());
-            
+
             $this->connectionToken = $body->ConnectionToken;
             $this->connectionId = $body->ConnectionId;
             return true;
@@ -146,10 +148,11 @@ class Client
         try {
             $url = $this->buildStartUrl();
             $client = new \GuzzleHttp\Client();
-            $res = $client->request('GET', $url);
+            $options = $this->headers ? ['headers' => $this->headers] : [];
+            $res = $client->request('GET', $url, $options);
 
             $body = json_decode($res->getBody());
-            
+
             return true;
 
         } catch(\Exception $e) {
@@ -176,5 +179,10 @@ class Client
     public function setChannels($channels)
     {
         $this->channels = $channels;
+    }
+
+    public function setHeaders($headers)
+    {
+        $this->headers = is_array($headers) ? $headers : throw new \Exception("Headers must be an array");
     }
 }
